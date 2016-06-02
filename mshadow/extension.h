@@ -35,4 +35,7 @@
 #include "./extension/spatial_upsampling_nearest.h"
 #include "./extension/transpose.h"
 #include "./extension/flip.h"
+#include "./extension/spatial_max_pool_mask.h"
+#include "./extension/spatial_max_unpool_forward.h"
+#include "./extension/spatial_max_unpool_backward.h"
 #endif  // MSHADOW_EXTENSION_H_
