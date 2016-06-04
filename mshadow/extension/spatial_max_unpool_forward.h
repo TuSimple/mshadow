@@ -39,11 +39,12 @@ struct MaxUnpoolingForwardExp:
   index_t out_width_;
   /*! \brief constructor, specify shape */
   MaxUnpoolingForwardExp(const IndexExp &mask, const SrcExp &src,
-             Shape<2> src_shape, Shape<2> out_shape,
+             Shape<2> out_shape,
              index_t ksize_y, index_t ksize_x, index_t kstride)
       : mask_(mask), src_(src), ksize_y_(ksize_y), ksize_x_(ksize_x), kstride_(kstride) {
-    this->src_height_ = src_shape[0];
-    this->src_width_  = src_shape[1];
+    Shape<4> sshape = ShapeCheck<4, SrcExp>::Check(src_);
+    this->src_height_ = sshape[2];
+    this->src_width_  = sshape[3];
     this->out_height_ = out_shape[0];
     this->out_width_ = out_shape[1];
   }
@@ -53,12 +54,12 @@ template<typename IndexExp, typename SrcExp,
          typename DType, int e1, int e2>
 inline MaxUnpoolingForwardExp<IndexExp, SrcExp, default_real_t>
 max_unpool_forward(const Exp<IndexExp, DType, e1> &mask, const Exp<SrcExp, DType, e2> &src, 
-  Shape<2> src_shape, Shape<2> out_shape,
+  Shape<2> out_shape,
   index_t ksize_y, index_t ksize_x, index_t kstride) {
   TypeCheckPass<ExpInfo<MaxUnpoolingForwardExp<IndexExp, SrcExp, DType> >::kDim >= 2>
       ::Error_Expression_Does_Not_Meet_Dimension_Req();
   return MaxUnpoolingForwardExp<IndexExp, SrcExp, default_real_t>
-      (mask.self(), src.self(), src_shape, out_shape, ksize_y, ksize_x, kstride);
+      (mask.self(), src.self(), out_shape, ksize_y, ksize_x, kstride);
 }
 // Execution plan
 template<typename IndexExp, typename SrcExp, typename DType>
@@ -109,12 +110,11 @@ MakePlan(const MaxUnpoolingForwardExp<IndexExp, SrcExp, DType> &exp) {
   return Plan<MaxUnpoolingForwardExp<IndexExp, SrcExp, DType>, DType>(exp);
 }
 
-// TODO: use shapecheck to pass shape parameter
-// TODO: remove the magic number 4
 template<int dim, typename IndexExp, typename SrcExp, typename DType>
 struct ShapeCheck<dim, MaxUnpoolingForwardExp<IndexExp, SrcExp, DType> > {
   inline static Shape<dim>
   Check(const MaxUnpoolingForwardExp<IndexExp, SrcExp, DType> &t) {
+    // Currently only 4 dimension data are supported
     CHECK(dim == 4);
     Shape<4> dshape = ShapeCheck<4, SrcExp>::Check(t.src_);
     Shape<dim> ret;

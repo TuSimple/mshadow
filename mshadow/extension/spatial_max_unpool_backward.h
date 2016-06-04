@@ -40,13 +40,14 @@ struct MaxUnpoolingBackwardExp:
   index_t kstride_;
   /*! \brief constructor */
   MaxUnpoolingBackwardExp(const IndexExp &mask, const SrcExp &grad,
-               Shape<2> mask_shape, Shape<2> grad_shape,
+               Shape<2> mask_shape,
                index_t ksize_y, index_t ksize_x, index_t kstride)
       : mask_(mask), grad_(grad), 
         ksize_y_(ksize_y), ksize_x_(ksize_x), kstride_(kstride) {
+    Shape<4> gshape = ShapeCheck<4, SrcExp>::Check(grad_);
     this->mask_height_ = mask_shape[0];
-    this->grad_height_ = grad_shape[0];
-    this->grad_width_  = grad_shape[1];
+    this->grad_height_ = gshape[2];
+    this->grad_width_  = gshape[3];
   }
 };
 /*!
@@ -70,12 +71,12 @@ inline MaxUnpoolingBackwardExp<IndexExp, SrcExp, default_real_t>
 max_unpool_backward(
        const Exp<IndexExp, DType, e1> &mask,
        const Exp<SrcExp, DType, e2> &grad,
-       Shape<2> mask_shape, Shape<2> grad_shape,
+       Shape<2> mask_shape, 
        index_t ksize_y, index_t ksize_x, index_t kstride) {
   TypeCheckPass<ExpInfo<MaxUnpoolingBackwardExp<IndexExp, SrcExp, DType> >::kDim >= 2>
       ::Error_Expression_Does_Not_Meet_Dimension_Req();
   return MaxUnpoolingBackwardExp<IndexExp, SrcExp, default_real_t>
-      (mask.self(), grad.self(), mask_shape, grad_shape, ksize_y, ksize_x, kstride);
+      (mask.self(), grad.self(), mask_shape, ksize_y, ksize_x, kstride);
 }
 // Execution plan
 template<typename IndexExp, typename SrcExp, typename DType>
@@ -108,12 +109,11 @@ MakePlan(const MaxUnpoolingBackwardExp<IndexExp, SrcExp, DType> &exp) {
   return Plan<MaxUnpoolingBackwardExp<IndexExp, SrcExp, DType>, DType>(exp);
 }
 
-// TODO: use shapecheck to pass shape parameter
-// TODO: remove the magic number 4
 template<int dim, typename IndexExp, typename SrcExp, typename DType>
 struct ShapeCheck<dim, MaxUnpoolingBackwardExp<IndexExp, SrcExp, DType> > {
   inline static Shape<dim>
   Check(const MaxUnpoolingBackwardExp<IndexExp, SrcExp, DType> &t) {
+    // Currently only 4 dimension data are supported
     CHECK(dim == 4);
     Shape<4> dshape = ShapeCheck<4, IndexExp>::Check(t.mask_);
     return dshape;
