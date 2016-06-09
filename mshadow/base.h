@@ -463,6 +463,12 @@ struct sum {
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
     initv = 0;
   }
+  /*! \brief */
+  template<typename DType>
+  MSHADOW_XINLINE static void Reduce(volatile DType& dst,  volatile DType src, 
+            volatile index_t& dst_i,  volatile index_t src_i) { // NOLINT(*)
+    // TODO: not implemented
+  }
 };
 /*! \brief maximum reducer */
 struct maximum {
@@ -491,6 +497,19 @@ struct maximum {
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
     initv = limits::MinValue<DType>();
   }
+  /*! \brief do reduction into dst and index into dst_i*/
+  template<typename DType>
+  MSHADOW_XINLINE static void Reduce(volatile DType& dst,  volatile DType src, 
+            volatile index_t& dst_i,  volatile index_t src_i) { // NOLINT(*)
+    using namespace std;
+#ifdef __CUDACC__
+    dst = ::max(dst, src);
+
+#else
+    dst = max(dst, src);
+#endif  // __CUDACC__
+    dst_i = (dst == src ? src_i : dst_i);
+  }
 };
 /*! \brief minimum reducer */
 struct minimum {
@@ -518,6 +537,12 @@ struct minimum {
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
     initv = -limits::MinValue<DType>();
+  }
+  /*! \brief */
+  template<typename DType>
+  MSHADOW_XINLINE static void Reduce(volatile DType& dst,  volatile DType src, 
+            volatile index_t& dst_i,  volatile index_t src_i) { // NOLINT(*)
+    // TODO: not implemented
   }
 };
 }  // namespace red
